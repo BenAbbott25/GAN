@@ -3,13 +3,13 @@ from discriminator import Discriminator
 import math
 import torch
 import numpy as np
-def train(max_int: int = 128, batch_size: int = 16, training_steps: int = 500):
-    input_length = int(math.log(max_int, 2))
+def train(input_length: int = 2, batch_size: int = 16, training_steps: int = 500):
+    input_length = input_length
 
     generator = Generator(input_length)
     discriminator = Discriminator(input_length)
     
-    generator_optimizer = torch.optim.Adam(generator.parameters(), lr=0.001)
+    generator_optimizer = torch.optim.Adam(generator.parameters(), lr=0.01)
     discriminator_optimizer = torch.optim.Adam(discriminator.parameters(), lr=0.01)
 
     loss_fn = torch.nn.BCELoss()
@@ -20,7 +20,7 @@ def train(max_int: int = 128, batch_size: int = 16, training_steps: int = 500):
         noise = torch.randint(0, 2, (batch_size, input_length)).float()
         generated_data = generator(noise)
 
-        true_labels, true_data = generate_even_data(max_int, batch_size=batch_size)
+        true_labels, true_data = generate_even_data(input_length, batch_size=batch_size)
         true_labels = torch.tensor(true_labels).float().view(-1, 1)
         true_data = torch.tensor(true_data).float()
 
@@ -45,25 +45,21 @@ def train(max_int: int = 128, batch_size: int = 16, training_steps: int = 500):
     final_generated_data = generator(torch.randint(0, 2, (100, input_length)).float())
     print(np.round(final_generated_data.detach().numpy()))
         
-def generate_even_data(max_int: int, batch_size: int):
-    numbers = []
-    labels = []
-    input_length = int(math.log(max_int, 2))
+def generate_even_data(input_length: int, batch_size: int):
+    outputs = np.zeros((batch_size, input_length))
+    labels = np.ones((batch_size, 1))
 
     for i in range(batch_size):
-        number = int(np.floor(np.random.randint(0, max_int/2)) * 2)
-        number_bin = [int(x) for x in bin(number)[2:]]
-        
-        number_bin = [0] * (input_length - len(number_bin)) + number_bin
-        
-        numbers.append(number_bin)
-        labels.append(number % 2 == 0)
 
-    numbers = torch.tensor(numbers)
+        index = np.random.randint(0, input_length)
+        outputs[i, index] = 1
+        labels[i] = 1
+
+    numbers = torch.tensor(outputs)
     labels = torch.tensor(labels)
 
     return labels, numbers
     
     
 if __name__ == "__main__":
-    train(max_int=8, batch_size=256, training_steps=10000)
+    train(input_length=2, batch_size=1024, training_steps=10000)
